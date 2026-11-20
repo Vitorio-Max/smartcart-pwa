@@ -149,4 +149,10 @@ export const api = {
     if (error) throw error;
     return data;
   },
+
+  async finalizarCompra(itemIds) {
+    const { error } = await supabase.rpc('finalizar_compra', { p_item_ids: itemIds });
+    if (error) throw error;
+  },
+
 };

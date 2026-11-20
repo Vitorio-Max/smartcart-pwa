@@ -57,7 +57,7 @@
                 {{ item.producto.nombre }}
               </p>
               <p class="text-xs text-slate-500">
-                {{ (Number(item.producto.precio) * item.cantidad).toFixed(2) }} €
+                {{ formatEuro(Number(item.producto.precio) * item.cantidad) }} €
               </p>
             </div>
           </button>
@@ -107,12 +107,13 @@
     <!-- Cierre de Compra en Caja -->
     <div class="grid grid-cols-1 gap-2.5 pt-2">
       <button
-        v-if="rutaTienda.enCarro.length > 0"
-        @click="procesarCierreManual"
-        class="w-full py-3.5 px-4 bg-slate-900 text-white font-extrabold rounded-2xl shadow-md active:scale-[0.99] transition flex items-center justify-center gap-2"
-      >
-        <span>✅</span> Finalizar compra manual ({{ rutaTienda.enCarro.length }})
-      </button>
+  v-if="rutaTienda.enCarro.length > 0"
+  @click="procesarCierreManual"
+  :disabled="cerrando"
+  class="w-full py-3.5 px-4 bg-slate-900 text-white font-extrabold rounded-2xl shadow-md active:scale-[0.99] transition flex items-center justify-center gap-2 disabled:opacity-50"
+>
+  <span>✅</span> {{ cerrando ? 'Finalizando…' : `Finalizar compra manual (${rutaTienda.enCarro.length})` }}
+</button>
 
       <button
         @click="$emit('abrirEscaner')"
@@ -137,6 +138,7 @@ import { ref, computed, watchEffect } from 'vue';
 import { useProductos } from '../composables/useProductos';
 import { useLista } from '../composables/useLista';
 import BottomSheetUbicacion from './BottomSheetUbicacion.vue';
+import { formatEuro } from '../utils/formato';
 
 defineEmits(['abrirEscaner']);
 
@@ -169,7 +171,20 @@ const abrirEditorUbicacion = (producto) => {
   productoEditando.value = producto;
 };
 
+const cerrando = ref(false);
+
 const procesarCierreManual = async () => {
-  await finalizarCompraManual(tiendaSeleccionadaId.value);
+  if (cerrando.value) return;
+  const n = rutaTienda.value.enCarro.length;
+  if (!window.confirm(`¿Finalizar la compra de ${n} producto(s)? Se sumarán a tu despensa y se quitarán de la lista.`)) return;
+  cerrando.value = true;
+  try {
+    await finalizarCompraManual(tiendaSeleccionadaId.value);
+  } catch (e) {
+    console.error(e);
+    alert('No se pudo finalizar la compra. Inténtalo de nuevo.');
+  } finally {
+    cerrando.value = false;
+  }
 };
 </script>

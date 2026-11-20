@@ -83,21 +83,25 @@
           </select>
         </div>
 
-        <div class="flex gap-2">
-          <input
-            v-model.number="nuevoForm.precio"
-            type="number"
-            step="0.05"
-            placeholder="Precio (€)"
-            class="w-1/2 h-11 px-3 rounded-xl border border-slate-300 bg-white text-sm"
-          />
-          <button
-            @click="guardarYAnadir"
-            class="w-1/2 h-11 bg-emerald-600 text-white font-bold rounded-xl shadow"
-          >
-            Guardar +1
-          </button>
-        </div>
+        <<div class="flex gap-2">
+  <input
+    v-model.number="nuevoForm.precio"
+    type="number"
+    step="0.05"
+    inputmode="decimal"
+    placeholder="Precio (€)"
+    class="w-1/2 h-11 px-3 rounded-xl border border-slate-300 bg-white text-sm"
+  />
+  <button
+    @click="guardarYAnadir"
+    :disabled="guardando || !nuevoForm.establecimiento_id"
+    class="w-1/2 h-11 bg-emerald-600 text-white font-bold rounded-xl shadow disabled:opacity-50"
+  >
+    {{ guardando ? 'Guardando…' : 'Guardar +1' }}
+  </button>
+</div>
+
+<p v-if="errorForm" class="text-sm font-semibold text-red-600">{{ errorForm }}</p>
       </div>
     </div>
 
@@ -126,7 +130,7 @@
               · {{ prod.ubicacion.nombre }}
             </span>
             <span class="text-xs font-extrabold text-slate-800 ml-auto">
-              {{ Number(prod.precio).toFixed(2) }} €
+              {{formatEuro(prod.precio)  }} €
             </span>
           </div>
         </div>
@@ -162,6 +166,7 @@
 import { ref, computed, reactive } from 'vue';
 import { useProductos } from '../composables/useProductos';
 import { useLista } from '../composables/useLista';
+import { formatEuro } from '../utils/formato';
 
 const { productos, establecimientos, crearProductoRapido } = useProductos();
 const { cantidadesPorProducto, anadirOIncrementar } = useLista();

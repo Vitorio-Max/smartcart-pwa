@@ -1,5 +1,7 @@
 <template>
-  <header class="sticky top-0 z-30 bg-slate-900 text-white px-4 py-3 shadow-md">
+  <header
+    class="sticky top-0 z-30 bg-slate-900 text-white px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] shadow-md"
+  >
     <div class="max-w-lg mx-auto flex items-center justify-between gap-2">
       <!-- Switch Central de Modo (solo visible en pestaña Lista) -->
       <div
@@ -8,25 +10,27 @@
       >
         <button
           @click="$emit('update:modoLista', 'casa')"
+          :aria-pressed="modoLista === 'casa'"
           :class="[
-            'px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5',
+            'h-10 px-3 rounded-lg text-sm font-bold transition-all flex items-center gap-1.5',
             modoLista === 'casa'
               ? 'bg-emerald-500 text-slate-950 shadow'
-              : 'text-slate-300 hover:text-white'
+              : 'text-slate-300 active:text-white'
           ]"
         >
-          <span>🏠</span> En Casa
+          <Home :size="16" /> En Casa
         </button>
         <button
           @click="$emit('update:modoLista', 'tienda')"
+          :aria-pressed="modoLista === 'tienda'"
           :class="[
-            'px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5',
+            'h-10 px-3 rounded-lg text-sm font-bold transition-all flex items-center gap-1.5',
             modoLista === 'tienda'
               ? 'bg-amber-400 text-slate-950 shadow'
-              : 'text-slate-300 hover:text-white'
+              : 'text-slate-300 active:text-white'
           ]"
         >
-          <span>🛒</span> En Tienda
+          <ShoppingCart :size="16" /> En Tienda
         </button>
       </div>
 
@@ -40,8 +44,8 @@
         <span class="block text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
           Pendiente
         </span>
-        <span class="text-sm font-black text-emerald-400 tabular-nums">
-          {{ presupuesto.toFixed(2) }} €
+        <span class="text-sm font-black text-emerald-400 tabular-nums whitespace-nowrap">
+          {{ formatEuro(presupuesto) }}
         </span>
       </div>
     </div>
@@ -49,6 +53,9 @@
 </template>
 
 <script setup>
+import { Home, ShoppingCart } from 'lucide-vue-next';
+import { formatEuro } from '../utils/formato';
+
 defineProps({
   tabActiva: String,
   modoLista: String,

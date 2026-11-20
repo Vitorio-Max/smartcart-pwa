@@ -6,19 +6,19 @@ const establecimientos = ref([]);
 const cargando = ref(false);
 
 export function useProductos() {
-  const cargarDatosBase = async () => {
-    cargando.value = true;
-    try {
-      const [ests, prods] = await Promise.all([
-        api.getEstablecimientos(),
-        api.getProductos(),
-      ]);
-      establecimientos.value = ests;
-      productos.value = prods;
-    } finally {
-      cargando.value = false;
-    }
-  };
+  const cargarDatosBase = async ({ silencioso = false } = {}) => {
+  if (!silencioso) cargando.value = true;
+  try {
+    const [ests, prods] = await Promise.all([
+      api.getEstablecimientos(),
+      api.getProductos(),
+    ]);
+    establecimientos.value = ests;
+    productos.value = prods;
+  } finally {
+    if (!silencioso) cargando.value = false;
+  }
+};
 
   const basicos = computed(() => productos.value.filter((p) => p.es_basico));
 
