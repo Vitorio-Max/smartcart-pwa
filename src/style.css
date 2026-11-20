@@ -1,8 +1,5 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-/* Ocultar scrollbars en chips horizontales manteniendo el scroll táctil */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
