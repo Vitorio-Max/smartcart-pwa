@@ -141,7 +141,7 @@
               · {{ prod.ubicacion.nombre }}
             </span>
             <span class="text-xs font-extrabold text-slate-800 ml-auto">
-              {{formatEuro(prod.precio)  }} €
+              {{formatEuro(prod.precio)  }}
             </span>
           </div>
         </div>

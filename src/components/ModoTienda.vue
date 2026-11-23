@@ -57,7 +57,7 @@
                 {{ item.producto.nombre }}
               </p>
               <p class="text-xs text-slate-500">
-                {{ formatEuro(Number(item.producto.precio) * item.cantidad) }} €
+                {{ formatEuro(Number(item.producto.precio) * item.cantidad) }}
               </p>
             </div>
           </button>
