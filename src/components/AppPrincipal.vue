@@ -9,6 +9,8 @@
     <main
       class="flex-1 w-full max-w-lg mx-auto px-4 pt-4 pb-[calc(env(safe-area-inset-bottom)+6rem)]"
     >
+      <AvisoConexion />
+
       <div v-if="errorCarga" class="text-center py-16 space-y-3">
         <p class="font-bold text-slate-700">No se pudieron cargar los datos</p>
         <button
@@ -69,6 +71,7 @@ import ModoTienda from './ModoTienda.vue';
 import BasicosView from './BasicosView.vue';
 import DespensaView from './DespensaView.vue';
 import ModalEscanerTicket from './ModalEscanerTicket.vue';
+import AvisoConexion from './AvisoConexion.vue';
 
 const { sesion, cerrarSesion } = useAuth();
 const { cargando, cargarDatosBase } = useProductos();

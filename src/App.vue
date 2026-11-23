@@ -9,6 +9,8 @@
   <LoginView v-else-if="!sesion" />
 
   <AppPrincipal v-else />
+
+  <AvisoActualizacion />
 </template>
 
 <script setup>
@@ -16,6 +18,7 @@ import { onMounted } from 'vue';
 import { useAuth } from './composables/useAuth';
 import LoginView from './components/LoginView.vue';
 import AppPrincipal from './components/AppPrincipal.vue';
+import AvisoActualizacion from './components/AvisoActualizacion.vue';
 
 const { sesion, iniciando, iniciar } = useAuth();
 

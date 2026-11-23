@@ -2,12 +2,5 @@ import { createApp } from 'vue';
 import App from './App.vue';
 import './style.css';
 
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch((err) => {
-      console.warn('Error registrando Service Worker:', err);
-    });
-  });
-}
-
+// El service worker lo registra vite-plugin-pwa (ver AvisoActualizacion.vue)
 createApp(App).mount('#app');
