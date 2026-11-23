@@ -174,17 +174,18 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive } from 'vue';
+import { ref, computed, reactive,watch } from 'vue';
+import { Star } from 'lucide-vue-next';
 import { useProductos } from '../composables/useProductos';
 import { useLista } from '../composables/useLista';
 import { formatEuro } from '../utils/formato';
 
-import { Star } from 'lucide-vue-next';
 
-const { productos, establecimientos, crearProductoRapido } = useProductos();
-const { cantidadesPorProducto, anadirOIncrementar } = useLista();
 
 const { productos, establecimientos, crearProductoRapido, alternarBasico } = useProductos();
+const { cantidadesPorProducto, anadirOIncrementar } = useLista();
+
+
 
 const busqueda = ref('');
 const filtroTienda = ref('todas');

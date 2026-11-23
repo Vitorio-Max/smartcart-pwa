@@ -57,6 +57,8 @@ const { itemsLista, presupuestoPendiente, cargarLista } = useLista();
 
 const { productosAlerta } = useDespensa();
 
+// Nº de productos pendientes en la lista (badge de la pestaña Lista)
+
 const badges = computed(() => ({
   lista: itemsLista.value.filter((i) => !i.comprado).length,
   despensa: productosAlerta.value.length,
@@ -66,10 +68,6 @@ const tabActiva = ref('lista');
 const modoLista = ref('casa');
 const errorCarga = ref(false);
 
-// Nº de productos pendientes en la lista (badge de la pestaña Lista)
-const badges = computed(() => ({
-  lista: itemsLista.value.filter((i) => !i.comprado).length,
-}));
 
 const avisoEscaner = () => {
   alert('El escáner de tickets con IA lo activaremos en el Bloque 3.');
