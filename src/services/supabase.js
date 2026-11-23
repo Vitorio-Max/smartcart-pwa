@@ -133,4 +133,12 @@ export const api = {
     if (error) throw error;
   },
 
+    async ajustarStock(producto_id, delta) {
+    const { error } = await supabase.rpc('ajustar_stock', {
+      p_producto_id: producto_id,
+      p_delta: delta,
+    });
+    if (error) throw error;
+  },
+
 };

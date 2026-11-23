@@ -31,9 +31,7 @@
 
         <BasicosView v-else-if="tabActiva === 'basicos'" />
 
-        <div v-else class="text-center py-16 text-slate-400 font-bold">
-          📦 La despensa llega en el siguiente bloque
-        </div>
+                <DespensaView v-else @abrir-escaner="avisoEscaner" />
       </template>
     </main>
 
@@ -51,9 +49,18 @@ import BottomNav from './components/BottomNav.vue';
 import ModoCasa from './components/ModoCasa.vue';
 import ModoTienda from './components/ModoTienda.vue';
 import BasicosView from './components/BasicosView.vue';
+import DespensaView from './components/DespensaView.vue';
+import { useDespensa } from './composables/useDespensa';
 
 const { cargando, cargarDatosBase } = useProductos();
 const { itemsLista, presupuestoPendiente, cargarLista } = useLista();
+
+const { productosAlerta } = useDespensa();
+
+const badges = computed(() => ({
+  lista: itemsLista.value.filter((i) => !i.comprado).length,
+  despensa: productosAlerta.value.length,
+}));
 
 const tabActiva = ref('lista');
 const modoLista = ref('casa');

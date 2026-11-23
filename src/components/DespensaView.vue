@@ -1,93 +1,139 @@
 <template>
-  <div class="space-y-4">
-    <!-- Botón Superior Destacado: Importar Ticket -->
+  <section class="space-y-4">
     <button
       @click="$emit('abrirEscaner')"
-      class="w-full py-3.5 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-extrabold rounded-2xl shadow-md flex items-center justify-center gap-2 active:scale-[0.99] transition"
+      class="w-full h-12 rounded-2xl bg-slate-900 text-white font-bold flex items-center justify-center gap-2 active:scale-[0.99] transition"
     >
-      <span class="text-xl">📸</span> Importar Ticket con IA (Actualizar Stock y Precios)
+      <Camera :size="20" /> Importar ticket
     </button>
 
-    <!-- Listado de Inventario -->
-    <div class="space-y-2.5">
-      <div
-        v-for="prod in productosOrdenadosPorAlerta"
-        :key="prod.id"
-        :class="[
-          'p-3.5 rounded-2xl border-2 transition flex items-center justify-between gap-3',
-          prod.stock_actual <= prod.stock_minimo
-            ? 'bg-rose-50/70 border-rose-300'
-            : 'bg-white border-slate-200/80'
-        ]"
+    <!-- Filtro -->
+    <div class="flex gap-2">
+      <button
+        @click="filtro = 'todos'"
+        :class="chip(filtro === 'todos')"
       >
-        <div class="min-w-0 flex-1">
-          <div class="flex items-center gap-2">
-            <span class="text-xl">{{ prod.categoria_icono }}</span>
-            <h3 class="font-bold text-slate-900 truncate">{{ prod.nombre }}</h3>
+        Todos ({{ productosDespensa.length }})
+      </button>
+      <button
+        @click="filtro = 'alertas'"
+        :class="chip(filtro === 'alertas')"
+      >
+        Por reponer ({{ productosAlerta.length }})
+      </button>
+    </div>
+
+    <!-- Estados vacíos -->
+    <div v-if="visibles.length === 0" class="text-center py-12 text-slate-500">
+      <template v-if="filtro === 'alertas'">
+        <p class="text-4xl mb-2">🎉</p>
+        <p class="font-bold text-slate-700">Todo en orden</p>
+        <p class="text-sm mt-1">No hay nada por reponer ahora mismo.</p>
+      </template>
+      <template v-else>
+        <p class="text-4xl mb-2">📦</p>
+        <p class="font-bold text-slate-700">Tu despensa está vacía</p>
+        <p class="text-sm mt-1">Crea productos desde la pestaña Lista.</p>
+      </template>
+    </div>
+
+    <ul class="space-y-3">
+      <li
+        v-for="prod in visibles"
+        :key="prod.id"
+        :class="['rounded-2xl border p-3.5 shadow-sm', estilos[estadoStock(prod)].tarjeta]"
+      >
+        <div class="flex items-center gap-3">
+          <span class="text-3xl">{{ prod.categoria_icono }}</span>
+
+          <div class="min-w-0 flex-1">
+            <p class="font-bold text-slate-900 leading-tight truncate">{{ prod.nombre }}</p>
+            <p :class="['text-xs font-semibold mt-0.5', estilos[estadoStock(prod)].texto]">
+              {{ etiqueta(prod) }}
+            </p>
           </div>
 
-          <div class="mt-1.5 flex items-center gap-2">
-            <span
-              :class="[
-                'text-xs font-extrabold px-2 py-0.5 rounded-md',
-                prod.stock_actual <= prod.stock_minimo
-                  ? 'bg-rose-600 text-white'
-                  : 'bg-slate-100 text-slate-600'
-              ]"
-            >
-              Stock: {{ prod.stock_actual }} (Mín: {{ prod.stock_minimo }})
-            </span>
-
+          <div class="flex items-center gap-1 shrink-0">
             <button
-              v-if="prod.stock_actual <= prod.stock_minimo"
-              @click="reponer(prod)"
-              class="text-xs font-extrabold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-lg active:scale-95 transition"
+              @click="ajustarStock(prod, -1)"
+              :disabled="prod.stock_actual <= 0"
+              aria-label="Restar una unidad"
+              class="w-11 h-11 rounded-xl bg-white border border-slate-200 text-slate-800 flex items-center justify-center active:bg-slate-100 disabled:opacity-30"
             >
-              + Reponer a lista
+              <Minus :size="20" />
+            </button>
+            <span class="w-9 text-center text-lg font-black tabular-nums">
+              {{ prod.stock_actual }}
+            </span>
+            <button
+              @click="ajustarStock(prod, 1)"
+              aria-label="Sumar una unidad"
+              class="w-11 h-11 rounded-xl bg-white border border-slate-200 text-slate-800 flex items-center justify-center active:bg-slate-100"
+            >
+              <Plus :size="20" />
             </button>
           </div>
         </div>
 
-        <!-- Controles rápidos - / + de consumo en casa -->
-        <div class="flex items-center gap-2 shrink-0">
-          <button
-            @click="ajustarStock(prod, -1)"
-            class="w-10 h-10 rounded-xl bg-white border border-slate-300 font-black text-lg text-slate-800 active:bg-slate-100"
+        <!-- Reposición -->
+        <div v-if="estadoStock(prod) !== 'ok'" class="mt-3">
+          <p
+            v-if="cantidadesPorProducto[prod.id]"
+            class="h-11 rounded-xl bg-white/70 border border-slate-200 text-slate-600 text-sm font-bold flex items-center justify-center"
           >
-            −
-          </button>
-          <span class="w-6 text-center font-black text-base text-slate-900">
-            {{ prod.stock_actual }}
-          </span>
+            ✓ En la lista (×{{ cantidadesPorProducto[prod.id] }})
+          </p>
           <button
-            @click="ajustarStock(prod, 1)"
-            class="w-10 h-10 rounded-xl bg-slate-900 text-white font-black text-lg active:scale-95"
+            v-else
+            @click="reponer(prod)"
+            class="w-full h-11 rounded-xl bg-slate-900 text-white text-sm font-bold flex items-center justify-center gap-2 active:scale-[0.99] transition"
           >
-            +
+            <ShoppingCart :size="18" /> Reponer (enviar a lista)
           </button>
         </div>
-      </div>
-    </div>
-  </div>
+      </li>
+    </ul>
+  </section>
 </template>
 
 <script setup>
-import { computed } from 'vue';
-import { useDespensa } from '../composables/useDespensa';
+import { ref, computed } from 'vue';
+import { Camera, Minus, Plus, ShoppingCart } from 'lucide-vue-next';
+import { useDespensa, estadoStock } from '../composables/useDespensa';
 
 defineEmits(['abrirEscaner']);
-const { productos, ajustarStock, reponerEnLista } = useDespensa();
 
-// Mostrar primero los productos bajo mínimo
-const productosOrdenadosPorAlerta = computed(() => {
-  return [...productos.value].sort((a, b) => {
-    const alertaA = a.stock_actual <= a.stock_minimo ? 0 : 1;
-    const alertaB = b.stock_actual <= b.stock_minimo ? 0 : 1;
-    return alertaA - alertaB || a.nombre.localeCompare(b.nombre);
-  });
-});
+const {
+  productosDespensa,
+  productosAlerta,
+  cantidadesPorProducto,
+  ajustarStock,
+  reponer,
+} = useDespensa();
 
-const reponer = async (prod) => {
-  await reponerEnLista(prod);
+const filtro = ref('todos');
+
+const visibles = computed(() =>
+  filtro.value === 'alertas' ? productosAlerta.value : productosDespensa.value
+);
+
+const estilos = {
+  agotado: { tarjeta: 'border-red-300 bg-red-50', texto: 'text-red-600' },
+  bajo: { tarjeta: 'border-amber-300 bg-amber-50', texto: 'text-amber-700' },
+  ok: { tarjeta: 'border-slate-200 bg-white', texto: 'text-slate-500' },
 };
+
+const etiqueta = (p) => {
+  const e = estadoStock(p);
+  if (e === 'agotado') return `Agotado · mínimo ${p.stock_minimo}`;
+  if (e === 'bajo') return `Stock bajo · mínimo ${p.stock_minimo}`;
+  return `Mínimo ${p.stock_minimo}`;
+};
+
+const chip = (activo) => [
+  'h-10 px-4 rounded-full text-sm font-bold border transition whitespace-nowrap',
+  activo
+    ? 'bg-slate-900 text-white border-slate-900'
+    : 'bg-white text-slate-600 border-slate-200',
+];
 </script>

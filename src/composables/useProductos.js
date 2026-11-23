@@ -7,18 +7,18 @@ const cargando = ref(false);
 
 export function useProductos() {
   const cargarDatosBase = async ({ silencioso = false } = {}) => {
-  if (!silencioso) cargando.value = true;
-  try {
-    const [ests, prods] = await Promise.all([
-      api.getEstablecimientos(),
-      api.getProductos(),
-    ]);
-    establecimientos.value = ests;
-    productos.value = prods;
-  } finally {
-    if (!silencioso) cargando.value = false;
-  }
-};
+    if (!silencioso) cargando.value = true;
+    try {
+      const [ests, prods] = await Promise.all([
+        api.getEstablecimientos(),
+        api.getProductos(),
+      ]);
+      establecimientos.value = ests;
+      productos.value = prods;
+    } finally {
+      if (!silencioso) cargando.value = false;
+    }
+  };
 
   const basicos = computed(() => productos.value.filter((p) => p.es_basico));
 
@@ -52,6 +52,20 @@ export function useProductos() {
     return nuevaUbi;
   };
 
+  //Marcar o desmarcar un producto como básico
+  const alternarBasico = async (producto) => {
+    const p = productos.value.find((x) => x.id === producto.id);
+    if (!p) return;
+    const nuevo = !p.es_basico;
+    p.es_basico = nuevo; // optimista
+    try {
+      await api.actualizarProducto(p.id, { es_basico: nuevo });
+    } catch (e) {
+      p.es_basico = !nuevo; // revertir
+      console.error('No se pudo cambiar el estado de básico:', e);
+    }
+  };
+
   return {
     productos,
     establecimientos,
@@ -62,5 +76,6 @@ export function useProductos() {
     crearProductoRapido,
     cambiarUbicacionProducto,
     crearPasilloYAsignar,
+    alternarBasico,
   };
 }

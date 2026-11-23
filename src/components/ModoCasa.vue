@@ -113,9 +113,20 @@
         class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between gap-3"
       >
         <div class="min-w-0 flex-1">
-          <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2">
             <span class="text-xl">{{ prod.categoria_icono }}</span>
-            <h3 class="font-bold text-slate-900 truncate">{{ prod.nombre }}</h3>
+            <h3 class="font-bold text-slate-900 truncate min-w-0">{{ prod.nombre }}</h3>
+            <button
+              @click="alternarBasico(prod)"
+              :aria-pressed="prod.es_basico"
+              :aria-label="prod.es_basico ? 'Quitar de básicos' : 'Marcar como básico'"
+              class="w-8 h-8 shrink-0 flex items-center justify-center rounded-full active:bg-slate-100"
+            >
+              <Star
+                :size="18"
+                :class="prod.es_basico ? 'fill-amber-400 text-amber-400' : 'text-slate-300'"
+              />
+            </button>
           </div>
 
           <div class="flex flex-wrap items-center gap-1.5 mt-1.5">
@@ -168,8 +179,12 @@ import { useProductos } from '../composables/useProductos';
 import { useLista } from '../composables/useLista';
 import { formatEuro } from '../utils/formato';
 
+import { Star } from 'lucide-vue-next';
+
 const { productos, establecimientos, crearProductoRapido } = useProductos();
 const { cantidadesPorProducto, anadirOIncrementar } = useLista();
+
+const { productos, establecimientos, crearProductoRapido, alternarBasico } = useProductos();
 
 const busqueda = ref('');
 const filtroTienda = ref('todas');
