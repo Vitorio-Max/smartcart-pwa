@@ -1,55 +1,46 @@
 <template>
-  <nav class="fixed bottom-0 inset-x-0 z-30 bg-white border-t border-slate-200 pb-safe shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
-    <div class="max-w-lg mx-auto grid grid-cols-3 h-16">
+  <nav
+    aria-label="Navegación principal"
+    class="fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur border-t border-slate-200 pb-[env(safe-area-inset-bottom)]"
+  >
+    <div class="max-w-lg mx-auto grid grid-cols-3">
       <button
-        @click="$emit('update:tabActiva', 'lista')"
-        :class="btnClass('lista')"
+        v-for="t in tabs"
+        :key="t.id"
+        @click="$emit('update:tabActiva', t.id)"
+        :aria-current="tabActiva === t.id ? 'page' : undefined"
+        :class="[
+          'h-16 flex flex-col items-center justify-center gap-0.5 text-xs font-bold transition',
+          tabActiva === t.id ? 'text-emerald-600' : 'text-slate-400 active:text-slate-600'
+        ]"
       >
-        <span class="text-xl leading-none">🛒</span>
-        <span class="text-xs font-bold mt-1">Lista</span>
-        <span
-          v-if="totalPendientes > 0"
-          class="absolute top-1.5 right-1/4 bg-emerald-600 text-white text-[10px] font-black px-1.5 rounded-full"
-        >
-          {{ totalPendientes }}
+        <span class="relative">
+          <component :is="t.icon" :size="24" :stroke-width="tabActiva === t.id ? 2.5 : 2" />
+          <span
+            v-if="badges[t.id]"
+            class="absolute -top-1.5 -right-3 min-w-[18px] h-[18px] px-1 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black flex items-center justify-center tabular-nums"
+          >
+            {{ badges[t.id] }}
+          </span>
         </span>
-      </button>
-
-      <button
-        @click="$emit('update:tabActiva', 'basicos')"
-        :class="btnClass('basicos')"
-      >
-        <span class="text-xl leading-none">⭐</span>
-        <span class="text-xs font-bold mt-1">Básicos</span>
-      </button>
-
-      <button
-        @click="$emit('update:tabActiva', 'despensa')"
-        :class="btnClass('despensa')"
-      >
-        <span class="text-xl leading-none">📦</span>
-        <span class="text-xs font-bold mt-1">Despensa</span>
-        <span
-          v-if="alertasStock > 0"
-          class="absolute top-1.5 right-1/4 bg-rose-600 text-white text-[10px] font-black px-1.5 rounded-full"
-        >
-          {{ alertasStock }}
-        </span>
+        {{ t.label }}
       </button>
     </div>
   </nav>
 </template>
 
 <script setup>
-const props = defineProps({
+import { ListChecks, Star, Package } from 'lucide-vue-next';
+
+defineProps({
   tabActiva: String,
-  totalPendientes: Number,
-  alertasStock: Number,
+  badges: { type: Object, default: () => ({}) },
 });
 defineEmits(['update:tabActiva']);
 
-const btnClass = (tab) => [
-  'relative flex flex-col items-center justify-center transition-colors active:bg-slate-100',
-  props.tabActiva === tab ? 'text-emerald-600' : 'text-slate-500',
+const tabs = [
+  { id: 'lista', label: 'Lista', icon: ListChecks },
+  { id: 'basicos', label: 'Básicos', icon: Star },
+  { id: 'despensa', label: 'Despensa', icon: Package },
 ];
 </script>

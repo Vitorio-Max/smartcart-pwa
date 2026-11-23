@@ -22,10 +22,11 @@ export const api = {
 
   async crearUbicacion({ establecimiento_id, nombre, despues_de_orden }) {
     const nuevoOrden = (despues_de_orden ?? 0) + 1;
-    await supabase.rpc('desplazar_orden_ubicaciones', {
+    const { error: errDesplazar } = await supabase.rpc('desplazar_orden_ubicaciones', {
       p_establecimiento_id: establecimiento_id,
       p_a_partir_de: nuevoOrden,
     });
+    if (errDesplazar) throw errDesplazar;
 
     const { data, error } = await supabase
       .from('ubicaciones')
@@ -80,7 +81,7 @@ export const api = {
   },
 
   // Lista de Compra
-  async getListaCompra() {
+    async getListaCompra() {
     const { data, error } = await supabase
       .from('lista_compra')
       .select(`
@@ -90,41 +91,18 @@ export const api = {
           establecimiento:establecimientos(id, nombre, color_hex),
           ubicacion:ubicaciones(id, nombre, orden_recorrido)
         )
-      `);
+      `)
+      .order('created_at');
     if (error) throw error;
     return data;
   },
 
-  async upsertItemLista(producto_id, deltaCantidad = 1) {
-    const { data: existente } = await supabase
-      .from('lista_compra')
-      .select('*')
-      .eq('producto_id', producto_id)
-      .maybeSingle();
-
-    if (existente) {
-      const nuevaCant = existente.cantidad + deltaCantidad;
-      if (nuevaCant <= 0) {
-        await supabase.from('lista_compra').delete().eq('id', existente.id);
-        return null;
-      }
-      const { data, error } = await supabase
-        .from('lista_compra')
-        .update({ cantidad: nuevaCant, comprado: false })
-        .eq('id', existente.id)
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    } else if (deltaCantidad > 0) {
-      const { data, error } = await supabase
-        .from('lista_compra')
-        .insert({ producto_id, cantidad: deltaCantidad, comprado: false })
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    }
+  async ajustarLista(producto_id, delta = 1) {
+    const { error } = await supabase.rpc('ajustar_lista', {
+      p_producto_id: producto_id,
+      p_delta: delta,
+    });
+    if (error) throw error;
   },
 
   async toggleComprado(id, comprado) {

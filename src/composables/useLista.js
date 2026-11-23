@@ -48,15 +48,50 @@ export function useLista() {
       .reduce((acc, i) => acc + Number(i.producto?.precio || 0) * i.cantidad, 0)
   );
 
-  const anadirOIncrementar = async (productoId, delta = 1) => {
-    await api.upsertItemLista(productoId, delta);
-    await cargarLista();
+    // Cola: los cambios se envían en orden y se recarga al quedar libre
+  let cola = Promise.resolve();
+  let pendientes = 0;
+
+  const anadirOIncrementar = (productoId, delta = 1) => {
+    // 1) Cambio local inmediato (optimista)
+    const existente = itemsLista.value.find((i) => i.producto_id === productoId);
+    if (existente) {
+      const nueva = existente.cantidad + delta;
+      if (nueva <= 0) {
+        itemsLista.value = itemsLista.value.filter((i) => i.producto_id !== productoId);
+      } else {
+        existente.cantidad = nueva;
+        if (delta > 0) existente.comprado = false;
+      }
+    } else if (delta > 0) {
+      itemsLista.value.push({
+        id: `tmp-${productoId}`,
+        producto_id: productoId,
+        cantidad: delta,
+        comprado: false,
+        notas: null,
+      });
+    }
+
+    // 2) Sincronizar con Supabase, en orden
+    pendientes++;
+    cola = cola
+      .then(() => api.ajustarLista(productoId, delta))
+      .catch((e) => console.error('No se pudo actualizar la lista:', e))
+      .finally(async () => {
+        pendientes--;
+        if (pendientes === 0) await cargarLista().catch(console.error);
+      });
+    return cola;
   };
 
   const alternarComprado = async (item) => {
-    // `item` puede ser una copia enriquecida: se modifica el original por id
-    const original = itemsLista.value.find((i) => i.id === item.id);
+    // Si el item acaba de añadirse, esperar a que exista en la base de datos
+    if (String(item.id).startsWith('tmp-')) await cola;
+
+    const original = itemsLista.value.find((i) => i.producto_id === item.producto_id);
     if (!original) return;
+
     const nuevo = !original.comprado;
     original.comprado = nuevo; // optimista
     try {
