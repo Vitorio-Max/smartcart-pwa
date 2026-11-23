@@ -1,195 +1,313 @@
 <template>
-  <div class="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
-    <div class="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-3xl max-h-[92vh] flex flex-col overflow-hidden shadow-2xl">
-      <!-- Cabecera Modal -->
-      <div class="px-5 py-4 bg-slate-900 text-white flex items-center justify-between">
-        <h2 class="font-extrabold text-base flex items-center gap-2">
-          <span>🧾</span> Escáner Inteligente de Ticket
-        </h2>
-        <button @click="$emit('cerrar')" class="w-8 h-8 rounded-full bg-slate-800 font-bold">✕</button>
-      </div>
+  <div class="fixed inset-0 z-50 flex flex-col bg-slate-50">
+    <header
+      class="bg-slate-900 text-white px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] flex items-center justify-between"
+    >
+      <h2 class="font-extrabold text-base">📸 Escanear ticket</h2>
+      <button
+        @click="$emit('cerrar')"
+        aria-label="Cerrar"
+        class="w-11 h-11 -mr-2 rounded-full flex items-center justify-center active:bg-slate-800"
+      >
+        <X :size="22" />
+      </button>
+    </header>
 
-      <!-- Contenido Scrollable -->
-      <div class="p-5 overflow-y-auto space-y-4 flex-1">
-        <!-- Paso 1: Captura con Cámara Trasera -->
-        <div v-if="!ticketAnalizado && !procesando" class="text-center py-6 space-y-4">
-          <div class="w-20 h-20 mx-auto bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center text-4xl">
-            📸
-          </div>
+    <!-- Inputs ocultos -->
+    <input ref="inputCamara" type="file" accept="image/*" capture="environment" class="hidden" @change="alElegir" />
+    <input ref="inputGaleria" type="file" accept="image/*" class="hidden" @change="alElegir" />
+
+    <div class="flex-1 overflow-y-auto">
+      <div class="max-w-lg mx-auto p-4 space-y-4">
+        <!-- 1. Elegir foto -->
+        <div v-if="estado === 'inicial'" class="text-center py-10 space-y-5">
+          <p class="text-5xl">🧾</p>
           <div>
-            <h3 class="font-extrabold text-lg text-slate-900">Haz una foto al ticket</h3>
+            <p class="font-extrabold text-slate-900 text-lg">Fotografía tu ticket</p>
             <p class="text-sm text-slate-500 mt-1">
-              Gemini extraerá los productos, detectará subidas de precio y sumará el stock a tu despensa.
+              Con buena luz, bien plano y completo. La IA lo leerá y tú revisas antes de guardar.
             </p>
           </div>
-
-          <label class="block w-full py-4 bg-emerald-600 text-white font-extrabold rounded-2xl shadow-lg cursor-pointer active:scale-[0.99] transition">
-            Abrir Cámara / Subir Ticket
-            <input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              class="hidden"
-              @change="onFileSelected"
-            />
-          </label>
-
-          <p v-if="errorEscaner" class="text-xs font-bold text-rose-600 bg-rose-50 p-3 rounded-xl">
-            {{ errorEscaner }}
-          </p>
-        </div>
-
-        <!-- Paso 2: Cargando IA -->
-        <div v-if="procesando" class="text-center py-12 space-y-3">
-          <div class="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p class="font-extrabold text-slate-800">Analizando ticket con Gemini 2.5 Flash...</p>
-          <p class="text-xs text-slate-500">Normalizando abreviaturas y cruzando precios</p>
-        </div>
-
-        <!-- Paso 3: Revisión y Matching -->
-        <div v-if="ticketAnalizado && !procesando" class="space-y-4">
-          <div class="bg-slate-100 p-3 rounded-xl flex items-center justify-between gap-2">
-            <div>
-              <span class="text-[10px] uppercase font-bold text-slate-500 block">Tienda Detectada</span>
-              <span class="font-extrabold text-sm text-slate-900">
-                {{ ticketAnalizado.establecimiento_detectado }} ({{ ticketAnalizado.fecha }})
-              </span>
-            </div>
-            <select
-              v-model="establecimientoDetectadoId"
-              class="h-9 px-2 rounded-lg border border-slate-300 bg-white text-xs font-bold"
+          <div class="space-y-3">
+            <button
+              @click="inputCamara.click()"
+              class="w-full h-14 rounded-2xl bg-emerald-600 text-white font-extrabold flex items-center justify-center gap-2 active:scale-[0.99] transition"
             >
+              <Camera :size="22" /> Hacer foto
+            </button>
+            <button
+              @click="inputGaleria.click()"
+              class="w-full h-12 rounded-2xl bg-white border border-slate-300 text-slate-800 font-bold flex items-center justify-center gap-2 active:bg-slate-100"
+            >
+              <ImagePlus :size="20" /> Elegir de la galería
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. Procesando -->
+        <div v-else-if="estado === 'procesando'" class="text-center py-20 space-y-4">
+          <div class="mx-auto w-12 h-12 rounded-full border-4 border-slate-200 border-t-emerald-500 animate-spin"></div>
+          <p class="font-bold text-slate-800">Leyendo tu ticket…</p>
+          <p class="text-sm text-slate-500">Puede tardar unos segundos.</p>
+        </div>
+
+        <!-- Error de lectura -->
+        <div v-else-if="estado === 'error'" class="text-center py-12 space-y-4">
+          <p class="text-4xl">⚠️</p>
+          <p class="font-bold text-slate-800">No se pudo leer el ticket</p>
+          <p class="text-sm text-red-600 font-semibold break-words">{{ error }}</p>
+          <button
+            @click="reiniciar"
+            class="h-12 px-6 rounded-xl bg-slate-900 text-white font-bold"
+          >
+            Probar con otra foto
+          </button>
+        </div>
+
+        <!-- 5. Hecho -->
+        <div v-else-if="estado === 'hecho'" class="text-center py-12 space-y-4">
+          <p class="text-5xl">✅</p>
+          <p class="font-extrabold text-slate-900 text-lg">Ticket guardado</p>
+          <ul class="text-sm text-slate-600 space-y-1">
+            <li>{{ resultado.actualizados }} producto(s) sumados a la despensa</li>
+            <li v-if="resultado.creados">{{ resultado.creados }} producto(s) nuevos creados</li>
+            <li v-if="resultado.precios">{{ resultado.precios }} precio(s) actualizados</li>
+          </ul>
+          <button
+            @click="$emit('cerrar')"
+            class="h-12 px-8 rounded-xl bg-slate-900 text-white font-bold"
+          >
+            Cerrar
+          </button>
+        </div>
+
+        <!-- 3-4. Revisión -->
+        <template v-else>
+          <div class="bg-white rounded-2xl border border-slate-200 p-3.5 space-y-2">
+            <label class="text-xs font-extrabold uppercase text-slate-500">Tienda del ticket</label>
+            <select
+              :value="establecimientoId"
+              @change="cambiarTienda($event.target.value)"
+              class="w-full h-12 px-3 rounded-xl border border-slate-300 bg-white font-semibold"
+            >
+              <option value="" disabled>Elige la tienda…</option>
               <option v-for="est in establecimientos" :key="est.id" :value="est.id">
                 {{ est.nombre }}
               </option>
             </select>
+            <p class="text-xs text-slate-500">
+              Detectado: {{ detectado || '—' }}<span v-if="fechaBonita"> · {{ fechaBonita }}</span>
+            </p>
           </div>
 
-          <!-- Lista de artículos clasificados -->
-          <div class="space-y-2.5">
-            <div
-              v-for="linea in lineasActivas"
-              :key="linea.uid"
-              :class="[
-                'p-3 rounded-2xl border-2 space-y-2',
-                linea.tipo === 'existente'
-                  ? 'bg-emerald-50/40 border-emerald-200'
-                  : 'bg-amber-50/50 border-amber-300'
-              ]"
-            >
-              <div class="flex items-start justify-between gap-2">
-                <div class="min-w-0 flex-1">
-                  <span
-                    :class="[
-                      'text-[10px] font-black uppercase px-2 py-0.5 rounded-md',
-                      linea.tipo === 'existente'
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-amber-400 text-slate-950'
-                    ]"
+          <p
+            v-if="!establecimientoId"
+            class="text-sm font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-xl p-3"
+          >
+            Elige la tienda para cruzar los productos con tu catálogo.
+          </p>
+
+          <template v-else>
+            <!-- 🟢 Existentes -->
+            <section v-if="filasExistentes.length" class="space-y-2.5">
+              <h3 class="text-sm font-extrabold text-emerald-700">
+                🟢 Ya en tu catálogo ({{ filasExistentes.length }})
+              </h3>
+              <ul class="space-y-2.5">
+                <li
+                  v-for="f in filasExistentes"
+                  :key="f.key"
+                  class="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-3 space-y-2"
+                >
+                  <div class="flex items-start gap-2">
+                    <div class="min-w-0 flex-1">
+                      <p class="font-bold text-slate-900 leading-tight">
+                        {{ productosTienda.find((p) => p.id === f.productoId)?.nombre }}
+                      </p>
+                      <p class="text-[11px] text-slate-500 truncate">Ticket: {{ f.nombre_ticket }}</p>
+                    </div>
+                    <button
+                      @click="f.descartado = true"
+                      aria-label="Descartar línea"
+                      class="w-10 h-10 shrink-0 rounded-full flex items-center justify-center text-slate-400 active:bg-white"
+                    >
+                      <X :size="18" />
+                    </button>
+                  </div>
+
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-1">
+                      <button @click="f.cantidad = Math.max(1, f.cantidad - 1)" aria-label="Restar" class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center active:bg-slate-100"><Minus :size="18" /></button>
+                      <span class="w-8 text-center font-black tabular-nums">{{ f.cantidad }}</span>
+                      <button @click="f.cantidad++" aria-label="Sumar" class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center active:bg-slate-100"><Plus :size="18" /></button>
+                    </div>
+                    <span class="text-sm font-bold tabular-nums">{{ formatEuro(f.precio) }}</span>
+                  </div>
+
+                  <label
+                    v-if="hayCambioPrecio(f)"
+                    class="flex items-center gap-2.5 text-sm font-semibold text-slate-800 min-h-10"
                   >
-                    {{ linea.tipo === 'existente' ? '🟢 En Catálogo' : '🟡 Nuevo Producto' }}
+                    <input type="checkbox" v-model="f.actualizarPrecio" class="w-5 h-5 accent-emerald-600" />
+                    Actualizar precio: {{ formatEuro(precioActual(f)) }} → {{ formatEuro(f.precio) }}
+                  </label>
+
+                  <select
+                    :value="f.productoId"
+                    @change="vincular(f, $event.target.value)"
+                    class="w-full h-10 px-2 rounded-xl border border-slate-300 bg-white text-xs font-medium"
+                  >
+                    <option value="">➕ No es este: crear producto nuevo</option>
+                    <option v-for="p in productosTienda" :key="p.id" :value="p.id">{{ p.nombre }}</option>
+                  </select>
+                </li>
+              </ul>
+            </section>
+
+            <!-- 🟡 Nuevos -->
+            <section v-if="filasNuevas.length" class="space-y-2.5">
+              <h3 class="text-sm font-extrabold text-amber-700">
+                🟡 Productos nuevos ({{ filasNuevas.length }})
+              </h3>
+              <ul class="space-y-2.5">
+                <li
+                  v-for="f in filasNuevas"
+                  :key="f.key"
+                  class="rounded-2xl border border-amber-300 bg-amber-50 p-3 space-y-2"
+                >
+                  <div class="flex items-start gap-2">
+                    <input
+                      v-model="f.nuevo.nombre"
+                      type="text"
+                      aria-label="Nombre del producto"
+                      class="flex-1 min-w-0 h-11 px-3 rounded-xl border border-slate-300 bg-white font-bold text-base"
+                    />
+                    <button
+                      @click="f.descartado = true"
+                      aria-label="Descartar línea"
+                      class="w-10 h-10 shrink-0 rounded-full flex items-center justify-center text-slate-400 active:bg-white"
+                    >
+                      <X :size="18" />
+                    </button>
+                  </div>
+                  <p class="text-[11px] text-slate-500 truncate">Ticket: {{ f.nombre_ticket }}</p>
+
+                  <div class="grid grid-cols-2 gap-2">
+                    <select
+                      v-model="f.nuevo.ubicacion_id"
+                      class="h-11 px-2 rounded-xl border border-slate-300 bg-white text-sm font-medium"
+                    >
+                      <option :value="null">Sin pasillo</option>
+                      <option v-for="u in ubicacionesTienda" :key="u.id" :value="u.id">{{ u.nombre }}</option>
+                    </select>
+                    <select
+                      :value="''"
+                      @change="vincular(f, $event.target.value)"
+                      class="h-11 px-2 rounded-xl border border-slate-300 bg-white text-sm font-medium"
+                    >
+                      <option value="">Vincular a existente…</option>
+                      <option v-for="p in productosTienda" :key="p.id" :value="p.id">{{ p.nombre }}</option>
+                    </select>
+                  </div>
+
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-1">
+                      <button @click="f.cantidad = Math.max(1, f.cantidad - 1)" aria-label="Restar" class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center active:bg-slate-100"><Minus :size="18" /></button>
+                      <span class="w-8 text-center font-black tabular-nums">{{ f.cantidad }}</span>
+                      <button @click="f.cantidad++" aria-label="Sumar" class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center active:bg-slate-100"><Plus :size="18" /></button>
+                    </div>
+                    <span class="text-sm font-bold tabular-nums">{{ formatEuro(f.precio) }}</span>
+                  </div>
+                </li>
+              </ul>
+            </section>
+
+            <!-- ⚪ Descartadas -->
+            <section v-if="filasDescartadas.length" class="space-y-2">
+              <h3 class="text-sm font-extrabold text-slate-500">
+                ⚪ Descartadas ({{ filasDescartadas.length }})
+              </h3>
+              <ul class="space-y-1.5">
+                <li
+                  v-for="f in filasDescartadas"
+                  :key="f.key"
+                  class="flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-2"
+                >
+                  <span class="flex-1 min-w-0 truncate text-sm text-slate-500 line-through">
+                    {{ f.nombre_ticket }}
                   </span>
-
-                  <input
-                    v-model="linea.nombre"
-                    type="text"
-                    class="w-full mt-1 font-bold text-sm text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:outline-none"
-                  />
-                </div>
-
-                <!-- Botón Descartar (bolsas, descuentos, etc.) -->
-                <button
-                  @click="descartarLinea(linea.uid)"
-                  class="w-7 h-7 rounded-lg bg-slate-200/70 text-slate-600 font-bold text-xs shrink-0"
-                  title="Ignorar línea"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <!-- Cantidad, Precio y Comparativa -->
-              <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
-                <span class="font-extrabold text-slate-700">
-                  Cant: +{{ linea.cantidad }} · {{ linea.precioNuevo.toFixed(2) }} €/ud
-                </span>
-
-                <!-- Alerta de cambio de precio en productos existentes -->
-                <label
-                  v-if="linea.tipo === 'existente' && linea.precioCambio"
-                  class="flex items-center gap-1.5 bg-white px-2 py-1 rounded-lg border border-amber-300 font-bold text-amber-800"
-                >
-                  <input type="checkbox" v-model="linea.actualizarPrecio" class="accent-emerald-600" />
-                  <span>{{ linea.precioAnterior.toFixed(2) }}€ → {{ linea.precioNuevo.toFixed(2) }}€</span>
-                </label>
-
-                <!-- Selector rápido de pasillo para productos nuevos -->
-                <select
-                  v-if="linea.tipo === 'nuevo'"
-                  v-model="linea.ubicacionId"
-                  class="h-8 px-2 rounded-lg border border-amber-300 bg-white text-xs font-semibold"
-                >
-                  <option value="">Asignar pasillo...</option>
-                  <option v-for="u in ubicacionesEstablecimientoActual" :key="u.id" :value="u.id">
-                    {{ u.nombre }}
-                  </option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Pie de Acción -->
-      <div v-if="ticketAnalizado && !procesando" class="p-4 border-t border-slate-200 bg-slate-50">
-        <button
-          :disabled="guardando || lineasActivas.length === 0"
-          @click="guardarTodo"
-          class="w-full py-3.5 bg-slate-900 disabled:opacity-50 text-white font-extrabold rounded-2xl shadow-lg"
-        >
-          {{ guardando ? 'Actualizando Despensa...' : `Confirmar y Guardar (${lineasActivas.length} artículos)` }}
-        </button>
+                  <button
+                    @click="f.descartado = false"
+                    class="h-9 px-3 rounded-lg text-xs font-bold text-slate-700 bg-white border border-slate-200 active:bg-slate-50"
+                  >
+                    Recuperar
+                  </button>
+                </li>
+              </ul>
+            </section>
+          </template>
+        </template>
       </div>
     </div>
+
+    <!-- Pie con confirmación -->
+    <footer
+      v-if="estado === 'revision' || estado === 'guardando'"
+      class="bg-white border-t border-slate-200 p-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]"
+    >
+      <div class="max-w-lg mx-auto space-y-2">
+        <p v-if="error" class="text-sm font-semibold text-red-600">{{ error }}</p>
+        <button
+          @click="confirmar"
+          :disabled="!puedeConfirmar || estado === 'guardando'"
+          class="w-full h-14 rounded-2xl bg-emerald-600 text-white font-extrabold active:scale-[0.99] transition disabled:opacity-40"
+        >
+          {{ estado === 'guardando' ? 'Guardando…' : `Confirmar y guardar (${activas.length})` }}
+        </button>
+      </div>
+    </footer>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue';
-import { useProductos } from '../composables/useProductos';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { X, Camera, ImagePlus, Minus, Plus } from 'lucide-vue-next';
 import { useEscanerTicket } from '../composables/useEscanerTicket';
+import { formatEuro } from '../utils/formato';
 
 const emit = defineEmits(['cerrar']);
-const { establecimientos } = useProductos();
+
 const {
-  procesando,
-  guardando,
-  errorEscaner,
-  ticketAnalizado,
-  lineasRevision,
-  establecimientoDetectadoId,
-  analizarFotoTicket,
-  descartarLinea,
-  confirmarYGuardarLote,
+  estado, error, fecha, detectado, establecimientoId, filas, resultado,
+  establecimientos, ubicacionesTienda, productosTienda,
+  activas, filasExistentes, filasNuevas, filasDescartadas, puedeConfirmar,
+  hayCambioPrecio, precioActual,
+  procesarArchivo, cambiarTienda, vincular, confirmar, reiniciar,
 } = useEscanerTicket();
 
-const lineasActivas = computed(() =>
-  lineasRevision.value.filter((l) => l.tipo !== 'descartado')
-);
+const inputCamara = ref(null);
+const inputGaleria = ref(null);
 
-const ubicacionesEstablecimientoActual = computed(() => {
-  const est = establecimientos.value.find((e) => e.id === establecimientoDetectadoId.value);
-  return est ? est.ubicaciones : [];
+const alElegir = (e) => {
+  const archivo = e.target.files?.[0];
+  e.target.value = ''; // permite volver a elegir la misma foto
+  procesarArchivo(archivo);
+};
+
+const fechaBonita = computed(() => {
+  const d = new Date(fecha.value);
+  return fecha.value && !isNaN(d) ? d.toLocaleDateString('es-ES') : '';
 });
 
-const onFileSelected = async (event) => {
-  const file = event.target.files?.[0];
-  if (file) {
-    await analizarFotoTicket(file);
-  }
+const onKey = (e) => {
+  if (e.key === 'Escape') emit('cerrar');
 };
-
-const guardarTodo = async () => {
-  await confirmarYGuardarLote();
-  emit('cerrar');
-};
+onMounted(() => {
+  window.addEventListener('keydown', onKey);
+  document.body.style.overflow = 'hidden';
+});
+onUnmounted(() => {
+  window.removeEventListener('keydown', onKey);
+  document.body.style.overflow = '';
+});
 </script>

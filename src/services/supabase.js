@@ -5,8 +5,14 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+const SELECT_PRODUCTO = `
+  *,
+  establecimiento:establecimientos(id, nombre, color_hex),
+  ubicacion:ubicaciones(id, nombre, orden_recorrido)
+`;
+
 export const api = {
-  // Establecimientos y Ubicaciones
+  // ---------- Establecimientos y Ubicaciones ----------
   async getEstablecimientos() {
     const { data, error } = await supabase
       .from('establecimientos')
@@ -37,15 +43,11 @@ export const api = {
     return data;
   },
 
-  // Productos / Catálogo
+  // ---------- Productos / Catálogo ----------
   async getProductos() {
     const { data, error } = await supabase
       .from('productos')
-      .select(`
-        *,
-        establecimiento:establecimientos(id, nombre, color_hex),
-        ubicacion:ubicaciones(id, nombre, orden_recorrido)
-      `)
+      .select(SELECT_PRODUCTO)
       .order('nombre');
     if (error) throw error;
     return data;
@@ -55,11 +57,7 @@ export const api = {
     const { data, error } = await supabase
       .from('productos')
       .insert(payload)
-      .select(`
-        *,
-        establecimiento:establecimientos(id, nombre, color_hex),
-        ubicacion:ubicaciones(id, nombre, orden_recorrido)
-      `)
+      .select(SELECT_PRODUCTO)
       .single();
     if (error) throw error;
     return data;
@@ -70,26 +68,29 @@ export const api = {
       .from('productos')
       .update({ ...campos, updated_at: new Date().toISOString() })
       .eq('id', id)
-      .select(`
-        *,
-        establecimiento:establecimientos(id, nombre, color_hex),
-        ubicacion:ubicaciones(id, nombre, orden_recorrido)
-      `)
+      .select(SELECT_PRODUCTO)
       .single();
     if (error) throw error;
     return data;
   },
 
-  // Lista de Compra
-    async getListaCompra() {
+  // Suma o resta stock de forma atómica (RPC ajustar_stock)
+  async ajustarStock(producto_id, delta) {
+    const { error } = await supabase.rpc('ajustar_stock', {
+      p_producto_id: producto_id,
+      p_delta: delta,
+    });
+    if (error) throw error;
+  },
+
+  // ---------- Lista de Compra ----------
+  async getListaCompra() {
     const { data, error } = await supabase
       .from('lista_compra')
       .select(`
         *,
         producto:productos(
-          *,
-          establecimiento:establecimientos(id, nombre, color_hex),
-          ubicacion:ubicaciones(id, nombre, orden_recorrido)
+          ${SELECT_PRODUCTO}
         )
       `)
       .order('created_at');
@@ -97,6 +98,7 @@ export const api = {
     return data;
   },
 
+  // Añade o quita unidades de forma atómica (RPC ajustar_lista)
   async ajustarLista(producto_id, delta = 1) {
     const { error } = await supabase.rpc('ajustar_lista', {
       p_producto_id: producto_id,
@@ -119,26 +121,40 @@ export const api = {
     if (error) throw error;
   },
 
-  // Edge Function IA
-  async invocarProcesarTicket(imageBase64, mimeType) {
-    const { data, error } = await supabase.functions.invoke('procesar-ticket', {
-      body: { imageBase64, mimeType },
-    });
-    if (error) throw error;
-    return data;
-  },
-
+  // Suma lo comprado al stock y limpia la lista, en una transacción (RPC finalizar_compra)
   async finalizarCompra(itemIds) {
     const { error } = await supabase.rpc('finalizar_compra', { p_item_ids: itemIds });
     if (error) throw error;
   },
 
-    async ajustarStock(producto_id, delta) {
-    const { error } = await supabase.rpc('ajustar_stock', {
-      p_producto_id: producto_id,
-      p_delta: delta,
+  // ---------- Escáner de tickets con IA ----------
+  async invocarProcesarTicket(imageBase64, mimeType) {
+    const { data, error } = await supabase.functions.invoke('procesar-ticket', {
+      body: { imageBase64, mimeType },
+    });
+    if (error) {
+      // Intentar leer el motivo real que devuelve la Edge Function
+      let detalle = error.message;
+      try {
+        const cuerpo = await error.context.json();
+        if (cuerpo?.error) detalle = cuerpo.error;
+      } catch {
+        try {
+          const texto = await error.context.text();
+          if (texto) detalle = `${error.context.status}: ${texto.slice(0, 200)}`;
+        } catch { /* sin detalle */ }
+      }
+      throw new Error(detalle);
+    }
+    return data;
+  },
+
+  // Confirma el ticket en lote, en una transacción (RPC confirmar_ticket)
+  async confirmarTicket({ nuevos, existentes }) {
+    const { error } = await supabase.rpc('confirmar_ticket', {
+      p_nuevos: nuevos,
+      p_existentes: existentes,
     });
     if (error) throw error;
   },
-
 };
