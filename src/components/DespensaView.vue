@@ -44,7 +44,6 @@
         :class="['rounded-2xl border p-3.5 shadow-sm', estilos[estadoStock(prod)].tarjeta]"
       >
         <div class="flex items-center gap-3">
-          <span class="text-3xl">{{ prod.categoria_icono }}</span>
 
           <div class="min-w-0 flex-1">
             <p class="font-bold text-slate-900 leading-tight truncate">{{ prod.nombre }}</p>

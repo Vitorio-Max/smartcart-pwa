@@ -4,6 +4,7 @@
       :tab-activa="tabActiva"
       v-model:modo-lista="modoLista"
       :presupuesto="presupuestoPendiente"
+      @abrir-menu="menuAbierto = true"
     />
 
     <main
@@ -33,33 +34,23 @@
 
         <BasicosView v-else-if="tabActiva === 'basicos'" />
 
-        <template v-else>
-          <DespensaView @abrir-escaner="abrirEscaner" />
-
-          <!-- Cuenta -->
-          <div class="mt-10 pt-5 border-t border-slate-200 text-center space-y-2">
-            <p class="text-xs text-slate-400 truncate">{{ sesion?.user?.email }}</p>
-            <button
-              @click="cerrarSesion"
-              class="h-11 px-5 rounded-xl bg-white border border-slate-200 text-slate-600 text-sm font-bold inline-flex items-center gap-2 active:bg-slate-100"
-            >
-              <LogOut :size="18" /> Cerrar sesión
-            </button>
-          </div>
-        </template>
+        <DespensaView v-else @abrir-escaner="abrirEscaner" />
       </template>
     </main>
 
     <BottomNav v-model:tab-activa="tabActiva" :badges="badges" />
 
     <ModalEscanerTicket v-if="escanerAbierto" @cerrar="escanerAbierto = false" />
+
+    <!-- Menú y pantallas de gestión -->
+    <MenuLateral :abierto="menuAbierto" @cerrar="menuAbierto = false" @abrir="abrirPanel" />
+    <GestionTiendas v-if="panel === 'tiendas'" @cerrar="panel = null" />
+    <GestionProductos v-if="panel === 'productos'" @cerrar="panel = null" />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { LogOut } from 'lucide-vue-next';
-import { useAuth } from '../composables/useAuth';
 import { useProductos } from '../composables/useProductos';
 import { useLista } from '../composables/useLista';
 import { useDespensa } from '../composables/useDespensa';
@@ -72,8 +63,10 @@ import BasicosView from './BasicosView.vue';
 import DespensaView from './DespensaView.vue';
 import ModalEscanerTicket from './ModalEscanerTicket.vue';
 import AvisoConexion from './AvisoConexion.vue';
+import MenuLateral from './MenuLateral.vue';
+import GestionTiendas from './GestionTiendas.vue';
+import GestionProductos from './GestionProductos.vue';
 
-const { sesion, cerrarSesion } = useAuth();
 const { cargando, cargarDatosBase } = useProductos();
 const { itemsLista, presupuestoPendiente, cargarLista } = useLista();
 const { productosAlerta } = useDespensa();
@@ -82,6 +75,8 @@ const tabActiva = ref('lista');
 const modoLista = ref('casa');
 const errorCarga = ref(false);
 const escanerAbierto = ref(false);
+const menuAbierto = ref(false);
+const panel = ref(null); // null | 'tiendas' | 'productos'
 
 // Badges de la barra inferior: pendientes en la lista y productos por reponer
 const badges = computed(() => ({
@@ -91,6 +86,11 @@ const badges = computed(() => ({
 
 const abrirEscaner = () => {
   escanerAbierto.value = true;
+};
+
+const abrirPanel = (nombre) => {
+  menuAbierto.value = false;
+  panel.value = nombre;
 };
 
 const cargarTodo = async () => {

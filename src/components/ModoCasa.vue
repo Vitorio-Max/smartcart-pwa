@@ -114,7 +114,6 @@
       >
         <div class="min-w-0 flex-1">
                     <div class="flex items-center gap-2">
-            <span class="text-xl">{{ prod.categoria_icono }}</span>
             <h3 class="font-bold text-slate-900 truncate min-w-0">{{ prod.nombre }}</h3>
             <button
               @click="alternarBasico(prod)"

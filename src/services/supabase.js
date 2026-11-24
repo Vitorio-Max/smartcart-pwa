@@ -127,6 +127,52 @@ export const api = {
     if (error) throw error;
   },
 
+  // ---------- Gestión de supermercados y pasillos ----------
+  async crearEstablecimiento({ nombre, color_hex }) {
+    const { data, error } = await supabase
+      .from('establecimientos')
+      .insert({ nombre, color_hex })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async actualizarEstablecimiento(id, campos) {
+    const { error } = await supabase.from('establecimientos').update(campos).eq('id', id);
+    if (error) throw error;
+  },
+
+  async eliminarEstablecimiento(id) {
+    const { error } = await supabase.from('establecimientos').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  async actualizarUbicacion(id, campos) {
+    const { error } = await supabase.from('ubicaciones').update(campos).eq('id', id);
+    if (error) throw error;
+  },
+
+  async eliminarUbicacion(id) {
+    const { error } = await supabase.from('ubicaciones').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  // Fija el orden del recorrido según la posición en la lista (RPC reordenar_ubicaciones)
+  async reordenarUbicaciones(establecimiento_id, ids) {
+    const { error } = await supabase.rpc('reordenar_ubicaciones', {
+      p_establecimiento_id: establecimiento_id,
+      p_ids: ids,
+    });
+    if (error) throw error;
+  },
+
+  // ---------- Gestión de productos ----------
+  async eliminarProducto(id) {
+    const { error } = await supabase.from('productos').delete().eq('id', id);
+    if (error) throw error;
+  },
+
   // ---------- Escáner de tickets con IA ----------
   async invocarProcesarTicket(imageBase64, mimeType) {
     const { data, error } = await supabase.functions.invoke('procesar-ticket', {

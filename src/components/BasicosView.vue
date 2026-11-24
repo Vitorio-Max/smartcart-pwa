@@ -14,7 +14,6 @@
           @click="anadirOIncrementar(prod.id, 1)"
           class="w-full h-full min-h-36 bg-white rounded-2xl border border-slate-200 shadow-sm p-3 flex flex-col items-center text-center gap-1.5 active:scale-95 active:bg-emerald-50 transition"
         >
-          <span class="text-4xl">{{ prod.categoria_icono }}</span>
           <span class="font-bold text-sm text-slate-900 leading-tight line-clamp-2">
             {{ prod.nombre }}
           </span>
