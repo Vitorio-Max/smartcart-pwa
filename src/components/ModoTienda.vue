@@ -135,6 +135,8 @@ import { useLista } from '../composables/useLista';
 import BottomSheetUbicacion from './BottomSheetUbicacion.vue';
 import { formatEuro } from '../utils/formato';
 
+import { toast } from '../composables/useToast';
+import { confirmar } from '../composables/useConfirm';
 
 const { establecimientos } = useProductos();
 const {
@@ -170,13 +172,20 @@ const cerrando = ref(false);
 const procesarCierreManual = async () => {
   if (cerrando.value) return;
   const n = rutaTienda.value.enCarro.length;
-  if (!window.confirm(`¿Finalizar la compra de ${n} producto(s)? Se sumarán a tu despensa y se quitarán de la lista.`)) return;
+  const ok = await confirmar({
+    titulo: '¿Finalizar la compra?',
+    mensaje: `Se sumarán ${n} producto(s) a tu despensa y se quitarán de la lista.`,
+    textoConfirmar: 'Finalizar',
+  });
+  if (!ok) return;
+
   cerrando.value = true;
   try {
     await finalizarCompraManual(tiendaSeleccionadaId.value);
+    toast.exito('Compra finalizada: despensa actualizada');
   } catch (e) {
     console.error(e);
-    alert('No se pudo finalizar la compra. Inténtalo de nuevo.');
+    toast.error('No se pudo finalizar la compra. Inténtalo de nuevo.');
   } finally {
     cerrando.value = false;
   }

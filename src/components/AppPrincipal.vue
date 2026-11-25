@@ -22,9 +22,7 @@
         </button>
       </div>
 
-      <div v-else-if="cargando" class="text-center py-16 text-slate-400 font-bold">
-        Cargando tu despensa y rutas...
-      </div>
+      <SkeletonLista v-else-if="cargando" />
 
       <template v-else>
         <template v-if="tabActiva === 'lista'">
@@ -63,6 +61,7 @@ import BasicosView from './BasicosView.vue';
 import DespensaView from './DespensaView.vue';
 import ModalEscanerTicket from './ModalEscanerTicket.vue';
 import AvisoConexion from './AvisoConexion.vue';
+import SkeletonLista from './SkeletonLista.vue';
 import MenuLateral from './MenuLateral.vue';
 import GestionTiendas from './GestionTiendas.vue';
 import GestionProductos from './GestionProductos.vue';

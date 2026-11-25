@@ -3,6 +3,8 @@ import { api } from '../services/supabase';
 import { useProductos } from './useProductos';
 import { useLista } from './useLista';
 
+import { toast } from './useToast';
+
 export const estadoStock = (p) => {
   if (p.stock_actual <= 0) return 'agotado';
   if (p.stock_actual <= p.stock_minimo) return 'bajo';
@@ -46,8 +48,10 @@ export function useDespensa() {
     pendientes++;
     cola = cola
       .then(() => api.ajustarStock(p.id, efectivo))
-      .catch((e) => console.error('No se pudo ajustar el stock:', e))
-      .finally(async () => {
+      .catch((e) => {
+        console.error('No se pudo ajustar el stock:', e);
+        toast.error('No se pudo guardar el stock. Revisa tu conexión.');
+      })      .finally(async () => {
         pendientes--;
         if (pendientes === 0) {
           await cargarDatosBase({ silencioso: true }).catch(console.error);

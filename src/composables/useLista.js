@@ -2,6 +2,8 @@ import { ref, computed } from 'vue';
 import { api } from '../services/supabase';
 import { useProductos } from './useProductos';
 
+import { toast } from './useToast';
+
 const itemsLista = ref([]);
 
 export function useLista() {
@@ -48,7 +50,7 @@ export function useLista() {
       .reduce((acc, i) => acc + Number(i.producto?.precio || 0) * i.cantidad, 0)
   );
 
-    // Cola: los cambios se envían en orden y se recarga al quedar libre
+  // Cola: los cambios se envían en orden y se recarga al quedar libre
   let cola = Promise.resolve();
   let pendientes = 0;
 
@@ -77,8 +79,10 @@ export function useLista() {
     pendientes++;
     cola = cola
       .then(() => api.ajustarLista(productoId, delta))
-      .catch((e) => console.error('No se pudo actualizar la lista:', e))
-      .finally(async () => {
+      .catch((e) => {
+        console.error('No se pudo actualizar la lista:', e);
+        toast.error('No se pudo guardar el cambio. Revisa tu conexión.');
+      }).finally(async () => {
         pendientes--;
         if (pendientes === 0) await cargarLista().catch(console.error);
       });
@@ -99,7 +103,7 @@ export function useLista() {
     } catch (e) {
       original.comprado = !nuevo; // revertir
       console.error('No se pudo marcar el producto:', e);
-    }
+      toast.error('No se pudo marcar el producto. Revisa tu conexión.');    }
   };
 
   const obtenerListaTiendaPorEstablecimiento = (establecimientoId) => {

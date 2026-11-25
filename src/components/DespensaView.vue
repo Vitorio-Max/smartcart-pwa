@@ -124,12 +124,20 @@
         </div>
 
         <!-- Edición: quitar de la despensa -->
-        <div v-if="modoEdicion" class="mt-3">
+                <!-- Edición: editar producto y quitar de la despensa -->
+        <div v-if="modoEdicion" class="mt-3 flex gap-2">
+          <button
+            @click="productoEditando = prod"
+            :aria-label="'Editar ' + prod.nombre"
+            class="h-11 px-4 shrink-0 rounded-xl bg-white border border-slate-300 text-slate-700 text-sm font-bold flex items-center justify-center gap-1.5 active:bg-slate-100"
+          >
+            <Pencil :size="16" /> Editar
+          </button>
           <button
             @click="quitar(prod)"
-            class="w-full h-11 rounded-xl bg-white border border-slate-300 text-slate-700 text-sm font-bold flex items-center justify-center gap-2 active:bg-slate-100"
+            class="flex-1 min-w-0 h-11 px-2 rounded-xl bg-white border border-slate-300 text-slate-700 text-[13px] leading-tight font-bold flex items-center justify-center gap-1.5 active:bg-slate-100"
           >
-            <EyeOff :size="18" /> Quitar de la despensa
+            <EyeOff :size="16" class="shrink-0" /> <span>Quitar de la despensa</span>
           </button>
         </div>
 
@@ -201,6 +209,11 @@
       </div>
     </div>
   </section>
+      <EditarProductoSheet
+      v-if="productoEditando"
+      :producto="productoEditando"
+      @cerrar="productoEditando = null"
+    />
 </template>
 
 <script setup>
@@ -209,6 +222,8 @@ import {
   Camera, Minus, Plus, ShoppingCart, Pencil, Check, EyeOff, ChevronDown,
 } from 'lucide-vue-next';
 import { useDespensa, estadoStock } from '../composables/useDespensa';
+
+import EditarProductoSheet from './EditarProductoSheet.vue';
 
 defineEmits(['abrirEscaner']);
 
@@ -226,6 +241,9 @@ const filtro = ref('todos');
 const modoEdicion = ref(false);
 const mostrarFuera = ref(false);
 const errorAccion = ref('');
+
+const productoEditando = ref(null);
+
 const deshacer = ref(null); // { id, nombre } del último producto quitado
 let temporizador = null;
 

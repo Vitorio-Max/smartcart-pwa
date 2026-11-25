@@ -8,10 +8,73 @@
   scrollbar-width: none;
 }
 
+/* Bottom sheet de ubicación */
 @keyframes slide-up {
   from { transform: translateY(100%); }
   to { transform: translateY(0); }
 }
 .animate-slide-up {
   animation: slide-up 0.25s ease-out;
+}
+
+/* Filas y secciones de la lista (tachar / destachar) */
+.fila-move,
+.fila-enter-active,
+.fila-leave-active {
+  transition: all 0.25s ease;
+}
+.fila-enter-from {
+  opacity: 0;
+  transform: translateX(-12px);
+}
+.fila-leave-to {
+  opacity: 0;
+  transform: translateX(24px);
+}
+.fila-leave-active {
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+
+/* Avisos (toasts) */
+.toast-move,
+.toast-enter-active,
+.toast-leave-active {
+  transition: all 0.25s ease;
+}
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translateY(-12px);
+}
+.toast-leave-active {
+  position: absolute;
+}
+
+/* Cuadro de confirmación */
+.dialogo-enter-active,
+.dialogo-leave-active {
+  transition: opacity 0.2s ease;
+}
+.dialogo-enter-from,
+.dialogo-leave-to {
+  opacity: 0;
+}
+
+/* Respetar a quien prefiere menos movimiento */
+@media (prefers-reduced-motion: reduce) {
+  .fila-move,
+  .fila-enter-active,
+  .fila-leave-active,
+  .toast-move,
+  .toast-enter-active,
+  .toast-leave-active,
+  .dialogo-enter-active,
+  .dialogo-leave-active {
+    transition: none;
+  }
+  .animate-slide-up {
+    animation: none;
+  }
 }
