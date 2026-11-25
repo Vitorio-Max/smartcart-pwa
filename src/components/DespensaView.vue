@@ -91,8 +91,8 @@
             </p>
           </div>
 
-          <!-- Ajustar stock (también en modo edición) -->
-          <div class="flex items-center gap-1 shrink-0">
+          <!-- Ajustar stock: solo en modo edición -->
+          <div v-if="modoEdicion" class="flex items-center gap-1 shrink-0">
             <button
               @click="ajustarStock(prod, -1)"
               :disabled="prod.stock_actual <= 0"
@@ -111,6 +111,15 @@
             >
               <Plus :size="20" />
             </button>
+          </div>
+
+          <!-- Fuera del modo edición: el stock es solo de consulta -->
+          <div
+            v-else
+            :aria-label="'Stock: ' + prod.stock_actual"
+            class="shrink-0 min-w-11 h-11 px-3 rounded-xl bg-white/70 border border-slate-200 flex items-center justify-center text-lg font-black tabular-nums text-slate-800"
+          >
+            {{ prod.stock_actual }}
           </div>
         </div>
 
