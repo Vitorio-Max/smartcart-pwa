@@ -11,6 +11,8 @@
   <AppPrincipal v-else />
 
   <AvisoActualizacion />
+  <ToastContainer />
+  <ConfirmDialog />
 </template>
 
 <script setup>
@@ -19,6 +21,8 @@ import { useAuth } from './composables/useAuth';
 import LoginView from './components/LoginView.vue';
 import AppPrincipal from './components/AppPrincipal.vue';
 import AvisoActualizacion from './components/AvisoActualizacion.vue';
+import ToastContainer from './components/ToastContainer.vue';
+import ConfirmDialog from './components/ConfirmDialog.vue';
 
 const { sesion, iniciando, iniciar } = useAuth();
 
