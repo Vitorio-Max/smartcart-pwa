@@ -115,12 +115,7 @@
   <span>✅</span> {{ cerrando ? 'Finalizando…' : `Finalizar compra manual (${rutaTienda.enCarro.length})` }}
 </button>
 
-      <button
-        @click="$emit('abrirEscaner')"
-        class="w-full py-3.5 px-4 bg-emerald-600 text-white font-extrabold rounded-2xl shadow-md active:scale-[0.99] transition flex items-center justify-center gap-2"
-      >
-        <span>📸</span> Escanear Ticket con IA
-      </button>
+      
     </div>
 
     <!-- Bottom Sheet para mover producto de pasillo en vivo -->
@@ -140,7 +135,6 @@ import { useLista } from '../composables/useLista';
 import BottomSheetUbicacion from './BottomSheetUbicacion.vue';
 import { formatEuro } from '../utils/formato';
 
-defineEmits(['abrirEscaner']);
 
 const { establecimientos } = useProductos();
 const {

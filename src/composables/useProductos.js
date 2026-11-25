@@ -71,6 +71,22 @@ export function useProductos() {
     }
   };
 
+  // Muestra (true) u oculta (false) un producto en la Despensa. No toca el catálogo ni Básicos.
+  // Cambia al instante en pantalla; si el servidor falla, se revierte y se lanza el error.
+  const cambiarEnDespensa = async (producto, valor) => {
+    const p = productos.value.find((x) => x.id === producto.id);
+    if (!p) return;
+    const anterior = p.en_despensa;
+    p.en_despensa = valor; // optimista
+    try {
+      await api.actualizarProducto(p.id, { en_despensa: valor });
+    } catch (e) {
+      p.en_despensa = anterior; // revertir
+      console.error('No se pudo cambiar el estado en la despensa:', e);
+      throw e;
+    }
+  };
+
   // ---------- Gestión de supermercados ----------
   // Crea (sin id) o actualiza (con id). Devuelve el id del supermercado.
   const guardarEstablecimiento = async ({ id = null, nombre, color_hex }) => {
@@ -163,6 +179,7 @@ export function useProductos() {
     cambiarUbicacionProducto,
     crearPasilloYAsignar,
     alternarBasico,
+    cambiarEnDespensa,
     guardarEstablecimiento,
     borrarEstablecimiento,
     renombrarUbicacion,

@@ -29,7 +29,7 @@
       <template v-else>
         <template v-if="tabActiva === 'lista'">
           <ModoCasa v-if="modoLista === 'casa'" />
-          <ModoTienda v-else @abrir-escaner="abrirEscaner" />
+          <ModoTienda v-else />
         </template>
 
         <BasicosView v-else-if="tabActiva === 'basicos'" />

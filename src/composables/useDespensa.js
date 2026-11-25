@@ -14,11 +14,19 @@ let cola = Promise.resolve();
 let pendientes = 0;
 
 export function useDespensa() {
-  const { productos, cargarDatosBase } = useProductos();
+  const { productos, cargarDatosBase, cambiarEnDespensa } = useProductos();
   const { cantidadesPorProducto, anadirOIncrementar } = useLista();
 
+  const porNombre = (a, b) => a.nombre.localeCompare(b.nombre);
+
+  // Productos que están en la despensa (los "quitados" siguen en el catálogo y en Básicos)
   const productosDespensa = computed(() =>
-    [...productos.value].sort((a, b) => a.nombre.localeCompare(b.nombre))
+    productos.value.filter((p) => p.en_despensa !== false).sort(porNombre)
+  );
+
+  // Productos del catálogo que se han quitado de la despensa
+  const productosFuera = computed(() =>
+    productos.value.filter((p) => p.en_despensa === false).sort(porNombre)
   );
 
   const productosAlerta = computed(() =>
@@ -56,9 +64,11 @@ export function useDespensa() {
 
   return {
     productosDespensa,
+    productosFuera,
     productosAlerta,
     cantidadesPorProducto,
     ajustarStock,
     reponer,
+    cambiarEnDespensa,
   };
 }
